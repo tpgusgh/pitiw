@@ -1,82 +1,106 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPost } from '../api';
-import { Container, Button, Textarea, ErrorMessage } from './StyledComponents';
 import styled from 'styled-components';
 
-const FormContainer = styled(Container)`
-  background: white;
-  border-radius: 16px;
+const FormContainer = styled.div`
+  max-width: 600px;
+  margin: 20px auto;
   padding: 20px;
-  border: 1px solid #e1e8ed;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
-const ImagePreview = styled.img`
-  max-width: 100%;
-  border-radius: 12px;
-  margin-top: 10px;
+const TextArea = styled.textarea`
+  width: 100%;
+  height: 100px;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #e6ecf0;
+  resize: none;
+`;
+
+const Input = styled.input`
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 20px;
+  border: 1px solid #e6ecf0;
+  background-color: #f5f8fa;
+`;
+
+const Button = styled.button`
+  padding: 12px;
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  &:hover {
+    background-color: #1991db;
+  }
+`;
+
+const ErrorMessage = styled.p`
+  color: #ff3333;
+  text-align: center;
 `;
 
 const CreatePost = () => {
   const [content, setContent] = useState('');
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No token found. Please log in.');
+    if (!content.trim()) {
+      setError('Content is required.');
       return;
     }
 
     try {
-      const formData = new FormData();
-      formData.append('content', content);
-      if (image) {
-        formData.append('image', image);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No token found. Please log in.');
+        navigate('/login');
+        return;
       }
-
-      const response = await createPost(formData, token);
-      setContent('');
-      setImage(null);
-      setImagePreview(null);
+      console.log('Creating post:', { content, image: image?.name }); // 디버깅
+      await createPost(content, token, image);
+      console.log('Post created successfully');
       navigate('/');
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Failed to create post. Please try again.';
-      setError(errorMessage);
+      console.error('Create post error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      setError(error.response?.data?.error || 'Failed to create post.');
     }
   };
 
   return (
     <FormContainer>
-      <h2>What's happening?</h2>
+      <h2>Create a Tweet</h2>
       <form onSubmit={handleSubmit}>
-        <Textarea
+        <TextArea
+          placeholder="What's happening?"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What's happening?"
-          rows="4"
         />
-        <input type="file" accept="image/*" onChange={handleImageChange} />
-        {imagePreview && <ImagePreview src={imagePreview} alt="Preview" />}
-        <Button type="submit" disabled={!content && !image}>
-          Tweet
-        </Button>
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            console.log('Selected file:', file?.name); // 디버깅
+            setImage(file);
+          }}
+        />
+        <Button type="submit">Tweet</Button>
       </form>
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </FormContainer>

@@ -1,32 +1,123 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import CreatePost from "./components/CreatePost";
-import PostList from "./components/PostList";
-import Login from "./components/Login";
-import Signup from "./components/Signup";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import styled from 'styled-components';
+import CreatePost from './components/CreatePost';
+import PostList from './components/PostList';
+import Login from './components/Login';
+import Signup from './components/Signup';
+import Profile from './components/Profile';
+import Likes from './components/Likes';
+
+// 스타일 정의
+const AppContainer = styled.div`
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f5f8fa;
+  min-height: 100vh;
+`;
+
+const Navbar = styled.nav`
+  background-color: #ffffff;
+  border-bottom: 1px solid #e6ecf0;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const Brand = styled.h1`
+  font-size: 20px;
+  color: #1da1f2;
+`;
+
+const NavButton = styled.button`
+  background: none;
+  border: none;
+  color: #1da1f2;
+  font-size: 16px;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
 
+  // 토큰으로 인증 상태 초기화
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setAuthenticated(!!token);
+  }, []);
+
+  // 로그아웃 처리
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setAuthenticated(false);
+  };
+
   return (
-    <Router>
-      <div>
-        <Routes>
-          {/* 로그인 상태에 따라 페이지를 보여주도록 설정 */}
+    <AppContainer>
+      <Router>
+        <Navbar>
+          <Brand>H</Brand>
           {authenticated ? (
-            <>
-              <Route path="/" element={<PostList setAuthenticated={setAuthenticated}/>} /> {/* 홈 페이지 */}
-              <Route path="/create" element={<CreatePost />} /> {/* 글 작성 페이지 */}
-            </>
+            <NavButton onClick={handleLogout}>Logout</NavButton>
           ) : (
-            <>
-              <Route path="/" element={<Login setAuthenticated={setAuthenticated} />} /> {/* 로그인 페이지 */}
-              <Route path="/signup" element={<Signup />} /> {/* 회원가입 페이지 */}
-            </>
+            <NavButton as="a" href="/login">
+              Login
+            </NavButton>
           )}
+        </Navbar>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              authenticated ? (
+                <PostList setAuthenticated={setAuthenticated} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/create"
+            element={
+              authenticated ? (
+                <CreatePost />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              authenticated ? (
+                <Profile />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/likes"
+            element={
+              authenticated ? (
+                <Likes />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/login"
+            element={<Login setAuthenticated={setAuthenticated} />}
+          />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </div>
-    </Router>
+      </Router>
+    </AppContainer>
   );
 }
 
