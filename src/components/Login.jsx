@@ -106,7 +106,7 @@ const Login = ({ setAuthenticated }) => {
 
   return (
     <FormContainer>
-      <FormTitle>Login to X</FormTitle>
+      <FormTitle>Login to H</FormTitle>
       <Form onSubmit={handleSubmit}>
         <Input
           type="text"
