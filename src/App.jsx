@@ -8,7 +8,6 @@ import Signup from './components/Signup';
 import Profile from './components/Profile';
 import Likes from './components/Likes';
 
-// 스타일 정의
 const AppContainer = styled.div`
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   background-color: #f5f8fa;
@@ -43,15 +42,14 @@ const NavButton = styled.button`
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
 
-  // 토큰으로 인증 상태 초기화
   useEffect(() => {
     const token = localStorage.getItem('token');
     setAuthenticated(!!token);
   }, []);
 
-  // 로그아웃 처리
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
     setAuthenticated(false);
   };
 
@@ -63,51 +61,29 @@ function App() {
           {authenticated ? (
             <NavButton onClick={handleLogout}>Logout</NavButton>
           ) : (
-            <NavButton as="a" href="/login">
-              Login
-            </NavButton>
+            <NavButton as="a" href="/login">Login</NavButton>
           )}
         </Navbar>
         <Routes>
           <Route
             path="/"
-            element={
-              authenticated ? (
-                <PostList setAuthenticated={setAuthenticated} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+            element={authenticated ? <PostList setAuthenticated={setAuthenticated} /> : <Navigate to="/login" replace />}
           />
           <Route
-            path="/create"
-            element={
-              authenticated ? (
-                <CreatePost />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+            path="/create-post"
+            element={authenticated ? <CreatePost /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/profile"
-            element={
-              authenticated ? (
-                <Profile />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+            element={authenticated ? <Profile /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/profile/:userId"
+            element={authenticated ? <Profile /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/likes"
-            element={
-              authenticated ? (
-                <Likes />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+            element={authenticated ? <Likes /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/login"

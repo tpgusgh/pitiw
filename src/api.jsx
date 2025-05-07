@@ -1,6 +1,6 @@
 import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL;
 
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const signup = async (username, password) => {
   try {
@@ -44,10 +44,11 @@ export const login = async (username, password) => {
   }
 };
 
-export const getProfile = async (token) => {
+export const getProfile = async (token, userId = null) => {
   try {
-    console.log('Fetching profile with token:', token.slice(0, 10) + '...');
-    const response = await axios.get(`${API_URL}/profile`, {
+    console.log('Fetching profile with token:', token.slice(0, 10) + '...', 'userId:', userId);
+    const url = userId ? `${API_URL}/profile/${userId}` : `${API_URL}/profile`;
+    const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -64,7 +65,6 @@ export const getProfile = async (token) => {
     throw error;
   }
 };
-
 export const updateProfile = async (token, nickname, bio, profileImage = null) => {
   try {
     const formData = new FormData();
@@ -204,6 +204,89 @@ export const likePost = async (postId, token) => {
       status: error.response?.status,
       data: error.response?.data,
     });
+    throw error;
+  }
+};
+
+export const createComment = async (postId, content, token) => {
+  try {
+    console.log('Creating comment for post:', postId);
+    const response = await axios.post(
+      `${API_URL}/posts/${postId}/comments`,
+      { content },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    console.log('Create comment response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create comment error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+export const getComments = async (postId, token) => {
+  try {
+    console.log('Fetching comments for post:', postId);
+    const response = await axios.get(`${API_URL}/posts/${postId}/comments`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Get comments response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get comments error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+export const followUser = async (token, userId) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/users/${userId}/follow`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Follow user error:', error.response?.data);
+    throw error;
+  }
+};
+
+export const unfollowUser = async (token, userId) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/users/${userId}/unfollow`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Unfollow user error:', error.response?.data);
     throw error;
   }
 };

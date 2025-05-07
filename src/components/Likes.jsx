@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLikedPosts } from '../api';
 import styled from 'styled-components';
-const API_URL = import.meta.env.VITE_API_URL;
+
 const Timeline = styled.div`
   max-width: 600px;
   margin: 20px auto;
@@ -21,17 +21,23 @@ const TweetHeader = styled.div`
   align-items: center;
 `;
 
-const Avatar = styled.div`
+const ProfileImage = styled.img`
   width: 40px;
   height: 40px;
-  background-color: #1da1f2;
   border-radius: 50%;
   margin-right: 10px;
+  object-fit: cover;
 `;
 
 const Username = styled.span`
   font-weight: bold;
   color: #14171a;
+`;
+
+const Nickname = styled.span`
+  color: #657786;
+  font-size: 14px;
+  margin-left: 5px;
 `;
 
 const Timestamp = styled.span`
@@ -91,13 +97,21 @@ const Likes = () => {
         posts.map((post) => (
           <Tweet key={post.id}>
             <TweetHeader>
-              <Avatar />
-              <Username>{post.username}</Username>
+              <ProfileImage
+                src={
+                  post.profile_image
+                    ? `http://192.168.45.159:5000${post.profile_image}`
+                    : 'https://via.placeholder.com/40'
+                }
+                alt="Profile"
+              />
+              <Username>{post.nickname || post.username}</Username>
+              <Nickname>@{post.username}</Nickname>
               <Timestamp>{new Date(post.created_at).toLocaleString()}</Timestamp>
             </TweetHeader>
             <TweetContent>{post.content}</TweetContent>
             {post.image_url && (
-              <TweetImage src={`${API_URL}${post.image_url}`} alt="Post" />
+              <TweetImage src={`http://192.168.45.159:5000${post.image_url}`} alt="Post" />
             )}
           </Tweet>
         ))

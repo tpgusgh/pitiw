@@ -87,6 +87,7 @@ const Login = ({ setAuthenticated }) => {
       console.log('Login response:', response.data); // 디버깅
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user_id', response.data.user_id);
         setAuthenticated(true);
         navigate('/');
       } else {

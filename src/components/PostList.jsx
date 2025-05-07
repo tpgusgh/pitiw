@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { getPosts, deletePost, likePost, createComment, getComments } from '../api';
 import styled from 'styled-components';
 const API_URL = import.meta.env.VITE_API_URL;
+
 const Timeline = styled.div`
   max-width: 600px;
   margin: 20px auto;
@@ -21,17 +22,32 @@ const TweetHeader = styled.div`
   align-items: center;
 `;
 
-const Avatar = styled.div`
+const ProfileImage = styled.img`
   width: 40px;
   height: 40px;
-  background-color: #1da1f2;
   border-radius: 50%;
   margin-right: 10px;
+  object-fit: cover;
+  cursor: pointer;
 `;
 
 const Username = styled.span`
   font-weight: bold;
   color: #14171a;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const Nickname = styled.span`
+  color: #657786;
+  font-size: 14px;
+  margin-left: 5px;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const Timestamp = styled.span`
@@ -52,22 +68,65 @@ const TweetImage = styled.img`
   margin-bottom: 10px;
 `;
 
-const TweetActions = styled.div`
-  display: flex;
-  gap: 20px;
+const Button = styled.button`
+  padding: 8px 12px;
+  background-color: ${(props) => (props.danger ? '#ff3333' : '#1da1f2')};
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-right: 10px;
+  &:hover {
+    background-color: ${(props) => (props.danger ? '#cc0000' : '#1991db')};
+  }
 `;
 
-const ActionButton = styled.button`
-  background: none;
-  border: none;
-  color: #657786;
-  cursor: pointer;
-  font-size: 14px;
+const LikeButton = styled(Button)`
   display: flex;
   align-items: center;
+  background-color: transparent;
+  color: ${(props) => (props.isLiked ? '#ff3333' : '#657786')};
   &:hover {
-    color: #1da1f2;
+    background-color: #f5f8fa;
+    color: ${(props) => (props.isLiked ? '#cc0000' : '#1da1f2')};
   }
+`;
+
+const HeartIcon = styled.span`
+  margin-right: 5px;
+  font-size: 16px;
+`;
+
+const CreatePostButton = styled(Button)`
+  margin-bottom: 20px;
+`;
+
+const CommentInput = styled.input`
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 20px;
+  border: 1px solid #e6ecf0;
+  background-color: #f5f8fa;
+`;
+
+const CommentSection = styled.div`
+  margin-top: 10px;
+  border-top: 1px solid #e6ecf0;
+  padding-top: 10px;
+`;
+
+const Comment = styled.div`
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+`;
+
+const CommentContent = styled.p`
+  margin: 5px 0;
+  font-size: 14px;
+  color: #14171a;
+  flex: 1;
 `;
 
 const ErrorMessage = styled.p`
@@ -75,162 +134,191 @@ const ErrorMessage = styled.p`
   text-align: center;
 `;
 
-const CreateButton = styled.button`
-  background-color: #1da1f2;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 20px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 20px;
-  &:hover {
-    background-color: #1991db;
-  }
-`;
-
-const PostList = ({ setAuthenticated }) => {
+const PostList = () => {
   const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState({});
+  const [newComment, setNewComment] = useState({});
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  const fetchPosts = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No token found. Please log in.');
-      setAuthenticated(false);
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const response = await axios.get(`${API_URL}/posts`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Fetched posts:', response.data);
-      setPosts(Array.isArray(response.data) ? response.data : []);
-      setError('');
-    } catch (error) {
-      console.error('Fetch posts error:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      if (error.response?.status === 401) {
-        setError('Session expired. Please log in again.');
-        localStorage.removeItem('token');
-        setAuthenticated(false);
-        navigate('/login');
-      } else if (error.response?.status === 500) {
-        setError('Server error. Please try again later.');
-      } else {
-        setError('Failed to fetch posts. Please try again.');
-      }
-      setPosts([]);
-    }
-  };
-
-  const handleToggleLike = async (postId, isLiked) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No token found. Please log in.');
-      setAuthenticated(false);
-      navigate('/login');
-      return;
-    }
-
-    try {
-      await axios.post(
-        `${API_URL}/posts/${postId}/like`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      fetchPosts();
-    } catch (error) {
-      console.error('Toggle like error:', error.response || error);
-      setError(isLiked ? 'Failed to unlike post' : 'Failed to like post');
-    }
-  };
-
-  const handleDelete = async (postId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No token found. Please log in.');
-      setAuthenticated(false);
-      navigate('/login');
-      return;
-    }
-
-    try {
-      await axios.delete(`${API_URL}/posts/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      fetchPosts();
-    } catch (error) {
-      console.error('Delete post error:', error.response || error);
-      setError('Failed to delete post');
-    }
-  };
-
-  const navigateToCreatePost = () => {
-    navigate('/create');
-  };
-
-  const navigateToProfile = () => {
-    navigate('/profile');
-  };
-  const navigateToLikes = () => {
-    navigate('/likes');
-  };
+  const currentUserId = parseInt(localStorage.getItem('user_id'));
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    const fetchPostsAndComments = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Please log in.');
+          navigate('/login');
+          return;
+        }
+        const fetchedPosts = await getPosts(token);
+        console.log('Fetched posts:', fetchedPosts); // 디버깅
+        setPosts(Array.isArray(fetchedPosts) ? fetchedPosts : []);
+
+        const commentsData = {};
+        for (const post of fetchedPosts) {
+          const postComments = await getComments(post.id, token);
+          console.log(`Comments for post ${post.id}:`, postComments); // 디버깅
+          commentsData[post.id] = Array.isArray(postComments) ? postComments : [];
+        }
+        setComments(commentsData);
+        setError('');
+      } catch (error) {
+        console.error('Fetch error:', error.response?.data, error.message); // 디버깅
+        setError(error.response?.data?.error || 'Failed to fetch posts or comments.');
+      }
+    };
+    fetchPostsAndComments();
+  }, [navigate]);
+
+  const handleDelete = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await deletePost(postId, token);
+      setPosts(posts.filter((post) => post.id !== postId));
+      setComments((prev) => {
+        const updated = { ...prev };
+        delete updated[postId];
+        return updated;
+      });
+    } catch (error) {
+      console.error('Delete error:', error.response?.data); // 디버깅
+      setError(error.response?.data?.error || 'Failed to delete post.');
+    }
+  };
+
+  const handleLike = async (postId, isLiked) => {
+    try {
+      const token = localStorage.getItem('token');
+      await likePost(postId, token);
+      setPosts(
+        posts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                isLiked: !isLiked,
+                likes: isLiked ? post.likes - 1 : post.likes + 1,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Like error:', error.response?.data); // 디버깅
+      setError(error.response?.data?.error || 'Failed to toggle like.');
+    }
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const content = newComment[postId]?.trim();
+      if (!content) {
+        setError('Comment cannot be empty.');
+        return;
+      }
+      const createdComment = await createComment(postId, content, token);
+      setComments((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), createdComment],
+      }));
+      setNewComment((prev) => ({ ...prev, [postId]: '' }));
+      setError('');
+    } catch (error) {
+      console.error('Comment error:', error.response?.data); // 디버깅
+      setError(error.response?.data?.error || 'Failed to create comment.');
+    }
+  };
 
   return (
     <Timeline>
-      <CreateButton onClick={navigateToCreatePost}>Tweet</CreateButton>
-      <CreateButton onClick={navigateToProfile}>Profile</CreateButton>
-      <CreateButton onClick={navigateToLikes}>likes</CreateButton>
+      <h2>Home</h2>
+      <CreatePostButton as={Link} to="/create-post">
+      
+        Write a post
+      </CreatePostButton>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {posts.length === 0 ? (
-        <p style={{ color: '#14171a' }}>No posts available.</p>
+        <p>No posts available.</p>
       ) : (
         posts.map((post) => (
           <Tweet key={post.id}>
             <TweetHeader>
-              <Avatar />
-              <Username>{post.username}</Username>
+              <Link to={`/profile/${post.user_id}`} onClick={() => console.log('Navigating to profile:', post.user_id)}>
+                <ProfileImage
+                  src={
+                    post.profile_image
+                      ? `${API_URL}${post.profile_image}`
+                      : 'https://via.placeholder.com/40'
+                  }
+                  alt="Profile"
+                  onError={() => console.log('Profile image failed:', post.profile_image)}
+                />
+              </Link>
+              <Link to={`/profile/${post.user_id}`} onClick={() => console.log('Navigating to profile:', post.user_id)}>
+                <Username>{post.nickname || post.username || 'Unknown'}</Username>
+                <Nickname>@{post.username || 'unknown'}</Nickname>
+              </Link>
               <Timestamp>{new Date(post.created_at).toLocaleString()}</Timestamp>
             </TweetHeader>
-            <TweetContent>{post.content}</TweetContent>
+            <TweetContent>{post.content || 'No content'}</TweetContent>
             {post.image_url && (
               <TweetImage
                 src={`${API_URL}${post.image_url}`}
                 alt="Post"
+                onError={() => console.log('Post image failed:', post.image_url)}
               />
             )}
-            <TweetActions>
-              <ActionButton
-                onClick={() => handleToggleLike(post.id, post.isLiked)}
+            <div>
+              <LikeButton
+                isLiked={post.isLiked}
+                onClick={() => handleLike(post.id, post.isLiked)}
               >
-                {post.isLiked ? 'Unlike' : 'Like'} ({post.likes})
-              </ActionButton>
-              <ActionButton onClick={() => handleDelete(post.id)}>
-                Delete
-              </ActionButton>
-            </TweetActions>
+                <HeartIcon>{post.isLiked ? '❤️' : '🤍'}</HeartIcon>
+                {post.likes} {post.isLiked ? 'Unlike' : 'Like'}
+              </LikeButton>
+              {post.user_id === currentUserId && (
+                <Button danger onClick={() => handleDelete(post.id)}>
+                  Delete
+                </Button>
+              )}
+            </div>
+            <CommentSection>
+              <CommentInput
+                type="text"
+                placeholder="Write a comment..."
+                value={newComment[post.id] || ''}
+                onChange={(e) =>
+                  setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
+                }
+              />
+              <Button onClick={() => handleCommentSubmit(post.id)}>Comment</Button>
+              {comments[post.id]?.length > 0 && (
+                <div>
+                  {comments[post.id].map((comment) => (
+                    <Comment key={comment.id}>
+                      <Link to={`/profile/${comment.user_id}`} onClick={() => console.log('Navigating to profile:', comment.user_id)}>
+                        <ProfileImage
+                          src={
+                            comment.profile_image
+                              ? `${API_URL}${comment.profile_image}`
+                              : 'https://via.placeholder.com/40'
+                          }
+                          alt="Profile"
+                          onError={() => console.log('Comment profile image failed:', comment.profile_image)}
+                        />
+                      </Link>
+                      <div>
+                        <Link to={`/profile/${comment.user_id}`} onClick={() => console.log('Navigating to profile:', comment.user_id)}>
+                          <Username>{comment.nickname || comment.username || 'Unknown'}</Username>
+                          <Nickname>@{comment.username || 'unknown'}</Nickname>
+                        </Link>
+                        <CommentContent>{comment.content}</CommentContent>
+                      </div>
+                    </Comment>
+                  ))}
+                </div>
+              )}
+            </CommentSection>
           </Tweet>
         ))
       )}
