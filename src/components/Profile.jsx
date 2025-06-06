@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// 스타일 컴포넌트
+
 const ProfileContainer = styled.div`
   max-width: 600px;
   margin: 20px auto;
