@@ -9,6 +9,18 @@ const Timeline = styled.div`
   margin: 20px auto;
 `;
 
+
+
+const RefreshButton = styled.button`
+  background-color: #1fe4bd;
+  margin-bottom: 10px;
+  &:hover {
+    background-color: #62ff6a;
+  }
+`;
+
+
+
 const Tweet = styled.div`
   background-color: #ffffff;
   border: 1px solid #e6ecf0;
@@ -141,6 +153,45 @@ const PostList = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const currentUserId = parseInt(localStorage.getItem('user_id'));
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchPostsAndComments = async () => {
+    try {
+      setIsLoading(true); // 로딩 시작
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in.');
+        navigate('/login');
+        return;
+      }
+            const fetchedPosts = await getPosts(token);
+      console.log('Fetched posts:', fetchedPosts);
+      setPosts(Array.isArray(fetchedPosts) ? fetchedPosts : []);
+
+      const commentsData = {};
+      for (const post of fetchedPosts) {
+        const postComments = await getComments(post.id, token);
+        console.log(`Comments for post ${post.id}:`, postComments);
+        commentsData[post.id] = Array.isArray(postComments) ? postComments : [];
+      }
+            setComments(commentsData);
+      setError('');
+    } catch (error) {
+      console.error('Fetch error:', error.response?.data, error.message);
+      setError(error.response?.data?.error || 'Failed to fetch posts or comments.');
+    } finally {
+      setIsLoading(false); // 로딩 종료
+    }
+  };
+
+  useEffect(() => {
+    fetchPostsAndComments();
+  }, [navigate]);
+
+  const handleRefresh = () => {
+    console.log('Refreshing posts...');
+    fetchPostsAndComments();
+  };
 
   useEffect(() => {
     const fetchPostsAndComments = async () => {
@@ -236,6 +287,9 @@ const PostList = () => {
       
         Write a post
       </CreatePostButton>
+      <RefreshButton onClick={handleRefresh} disabled={isLoading}>
+        {isLoading ? 'Refreshing...' : 'Refresh Posts'}
+      </RefreshButton>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {posts.length === 0 ? (
         <p>No posts available.</p>

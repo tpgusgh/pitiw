@@ -84,10 +84,11 @@ const Login = ({ setAuthenticated }) => {
     try {
       console.log('Sending login request:', { username, password }); // 디버깅
       const response = await login(username, password);
+      const { token, user } = response.data;
       console.log('Login response:', response.data); // 디버깅
       if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user_id', response.data.user_id);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user_id', user.id);
         setAuthenticated(true);
         navigate('/');
       } else {

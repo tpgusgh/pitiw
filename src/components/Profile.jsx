@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getProfile, updateProfile, getPosts } from '../api';
+import { getProfile, updateProfile, getPosts, followUser, unfollowUser } from '../api';
 import styled from 'styled-components';
-
 const API_URL = import.meta.env.VITE_API_URL;
-
 
 const ProfileContainer = styled.div`
   max-width: 600px;
@@ -35,26 +33,23 @@ const ProfileInfo = styled.div`
 
 const Username = styled.h2`
   margin: 0;
-  color: #14171a;
 `;
 
 const Nickname = styled.h3`
   margin: 5px 0;
-  color: #657786;
 `;
 
 const Bio = styled.p`
   margin: 5px 0;
-  color: #14171a;
+  color: #333;
 `;
 
-const FollowInfo = styled.div`
+const FollowStats = styled.div`
   display: flex;
-  margin: 10px 0;
+  gap: 20px;
 `;
 
-const FollowCount = styled.span`
-  margin-right: 15px;
+const FollowCounter = styled.span`
   cursor: pointer;
   &:hover {
     text-decoration: underline;
@@ -62,41 +57,40 @@ const FollowCount = styled.span`
 `;
 
 const Input = styled.input`
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 20px;
-  border: 1px solid #e6ecf0;
-  background-color: #f5f8fa;
+  display: block;
   width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #e6ecf0;
+  border-radius: 4px;
 `;
 
 const TextArea = styled.textarea`
+  display: block;
   width: 100%;
-  height: 100px;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
   border: 1px solid #e6ecf0;
-  resize: none;
+  border-radius: 4px;
 `;
 
 const Button = styled.button`
-  padding: 12px;
   background-color: #1da1f2;
   color: white;
   border: none;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
   &:hover {
-    background-color: #1991db;
+    background-color: #1a91da;
   }
 `;
 
 const FollowButton = styled(Button)`
-  background-color: ${props => props.isFollowing ? '#ff3333' : '#1da1f2'};
+  background-color: ${(props) => (props.isFollowing ? '#e6ecf0' : '#1da1f2')};
+  color: ${(props) => (props.isFollowing ? '#14171a' : 'white')};
   &:hover {
-    background-color: ${props => props.isFollowing ? '#cc0000' : '#1991db'};
+    background-color: ${(props) => (props.isFollowing ? '#d4d9dd' : '#1a91da')};
   }
 `;
 
@@ -105,47 +99,47 @@ const ErrorMessage = styled.p`
   text-align: center;
 `;
 
-const Tweet = styled.div`
-  background-color: #ffffff;
+const TweetStyled = styled.div`
+  background-color: #fff;
   border: 1px solid #e6ecf0;
   padding: 15px;
   margin-bottom: 10px;
   border-radius: 8px;
 `;
 
-const TweetHeader = styled.div`
+const PostHeader = styled.div`
   display: flex;
   align-items: center;
 `;
 
-const TweetContent = styled.p`
+const PostContent = styled.p`
   margin: 10px 0;
-  font-size: 16px;
-  color: #14171a;
 `;
 
-const TweetImage = styled.img`
+const PostImage = styled.img`
   max-width: 100%;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 8px;
 `;
 
 const Profile = () => {
-  const [profile, setProfile] = useState({ 
-    username: '', 
-    nickname: '', 
-    bio: '', 
+  const [profile, setProfile] = useState({
+    id: null,
+    user_id: null,
+    username: '',
+    nickname: '',
+    bio: '',
     profile_image: null,
     followers_count: 0,
     following_count: 0,
+    posts_count: 0,
     is_following: false,
-    user_id: null
   });
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { userId } = useParams();
   const currentUserId = parseInt(localStorage.getItem('user_id'));
@@ -155,20 +149,36 @@ const Profile = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
+          setError('Please log in.');
           navigate('/login');
           return;
         }
 
+        console.log('Fetching profile for userId:', userId, 'currentUserId:', currentUserId);
         const profileData = await getProfile(token, userId);
-        setProfile(profileData);
+        console.log('Profile data:', profileData);
+        setProfile({
+          id: profileData.id || profileData.user_id,
+          user_id: profileData.user_id || profileData.id,
+          username: profileData.username || '',
+          nickname: profileData.nickname || '',
+          bio: profileData.bio || '',
+          profile_image: profileData.profile_image,
+          followers_count: profileData.followers_count || 0,
+          following_count: profileData.following_count || 0,
+          posts_count: profileData.posts_count || 0,
+          is_following: profileData.is_following || false,
+        });
         setNickname(profileData.nickname || '');
         setBio(profileData.bio || '');
 
-        const userPosts = await getPosts(token, userId || profileData.user_id);
+        const userPosts = await getPosts(token, userId || profileData.id);
+        console.log('User posts:', userPosts);
         setPosts(Array.isArray(userPosts) ? userPosts : []);
+        setError('');
       } catch (error) {
-        console.error('Profile fetch error:', error.response?.data);
-        setError('Failed to load profile or posts.');
+        console.error('Profile fetch error:', error.response?.data || error.message);
+        setError(error.response?.data?.error || 'Failed to load profile or posts.');
       }
     };
     fetchProfileAndPosts();
@@ -176,95 +186,130 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      if (!token || userId !== currentUserId.toString()) {
-        setError('Unauthorized to update this profile.');
-        return;
+      if (!token) {
+        throw new Error('No token found. Please log in.');
       }
-      await updateProfile(token, nickname, bio, profileImage);
-      const updatedProfile = await getProfile(token);
-      setProfile(updatedProfile);
+      if (userId && parseInt(userId) !== currentUserId) {
+        throw new Error('Unauthorized to update this profile.');
+      }
+      console.log('Submitting profile update:', { nickname, bio, profileImage: profileImage?.name });
+      const updatedProfile = await updateProfile(token, nickname, bio, profileImage);
+      console.log('Updated profile response:', updatedProfile);
+      setProfile({
+        id: updatedProfile.id || updatedProfile.user_id,
+        user_id: updatedProfile.user_id || updatedProfile.id,
+        username: updatedProfile.username || profile.username,
+        nickname: updatedProfile.nickname || '',
+        bio: updatedProfile.bio || '',
+        profile_image: updatedProfile.profile_image,
+        followers_count: updatedProfile.followers_count || profile.followers_count,
+        following_count: updatedProfile.following_count || profile.following_count,
+        posts_count: updatedProfile.posts_count || profile.posts_count,
+        is_following: updatedProfile.is_following || profile.is_following,
+      });
       setError('');
       alert('Profile updated successfully!');
     } catch (error) {
-      console.error('Update profile error:', error.response?.data);
-      setError(error.response?.data?.error || 'Failed to update profile.');
+      console.error('Update profile error:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to update profile.';
+      setError(errorMsg);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_id');
+        navigate('/login');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleFollow = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    const prevIsFollowing = profile.is_following;
+    const prevFollowersCount = profile.followers_count;
+
+    setProfile((prev) => ({
+      ...prev,
+      is_following: !prevIsFollowing,
+      followers_count: prevIsFollowing ? prevFollowersCount - 1 : prevFollowersCount + 1,
+    }));
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/follow/${profile.user_id}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to toggle follow');
+      if (!token || !profile.id || profile.id === currentUserId) {
+        throw new Error('Cannot follow/unfollow yourself or unauthorized.');
       }
-      
-      const data = await response.json();
-      setProfile(prev => ({
+      const response = prevIsFollowing
+        ? await unfollowUser(token, profile.id)
+        : await followUser(token, profile.id);
+      console.log('Follow response:', response);
+      setProfile((prev) => ({
         ...prev,
-        is_following: data.is_following,
-        followers_count: data.followers_count
+        is_following: response.is_following,
+        followers_count: response.followers_count,
       }));
+      setError('');
     } catch (error) {
-      console.error('Follow error:', error);
-      setError('Failed to toggle follow.');
+      console.error('Follow error:', error.response?.data || error.message);
+      setProfile((prev) => ({
+        ...prev,
+        is_following: prevIsFollowing,
+        followers_count: prevFollowersCount,
+      }));
+      setError(error.response?.data?.error || 'Failed to toggle follow.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const navigateToFollowers = () => {
-    navigate(`/profile/${profile.user_id}/followers`);
+    navigate(`/profile/${profile.id}/followers`);
   };
 
   const navigateToFollowing = () => {
-    navigate(`/profile/${profile.user_id}/following`);
+    navigate(`/profile/${profile.id}/following`);
   };
+
+  console.log('Rendering profile, isOwnProfile:', !userId || parseInt(userId) === currentUserId);
 
   return (
     <ProfileContainer>
       <h2>Profile</h2>
       <ProfileHeader>
         <ProfileImage
-          src={profile.profile_image ? `${API_URL}${profile.profile_image}` : 'https://via.placeholder.com/80'}
+          src={profile.profile_image ? `${API_URL}${profile.profile_image}` : '/assets/fallback-profile.jpeg'}
           alt="Profile"
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/80';
-          }}
+          onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
         />
         <ProfileInfo>
           <Username>@{profile.username || 'Unknown'}</Username>
           <Nickname>{profile.nickname || 'No nickname'}</Nickname>
           <Bio>{profile.bio || 'No bio'}</Bio>
-          
-          <FollowInfo>
-            <FollowCount onClick={navigateToFollowers}>
+          <FollowStats>
+            <FollowCounter onClick={navigateToFollowers}>
               {profile.followers_count} Followers
-            </FollowCount>
-            <FollowCount onClick={navigateToFollowing}>
+            </FollowCounter>
+            <FollowCounter onClick={navigateToFollowing}>
               {profile.following_count} Following
-            </FollowCount>
-          </FollowInfo>
-          
-          {userId && userId != currentUserId && (
-            <FollowButton 
+            </FollowCounter>
+          </FollowStats>
+          {userId && parseInt(userId) !== currentUserId && (
+            <FollowButton
               isFollowing={profile.is_following}
               onClick={handleFollow}
+              disabled={isSubmitting}
             >
               {profile.is_following ? 'Unfollow' : 'Follow'}
             </FollowButton>
           )}
         </ProfileInfo>
       </ProfileHeader>
-
-      {userId == currentUserId && (
+      {!userId || parseInt(userId) === currentUserId ? (
         <form onSubmit={handleSubmit}>
           <Input
             type="text"
@@ -282,39 +327,38 @@ const Profile = () => {
             accept="image/*"
             onChange={(e) => setProfileImage(e.target.files[0])}
           />
-          <Button type="submit">Save Profile</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
+          </Button>
         </form>
+      ) : (
+        <p>This is not your profile, so you cannot edit it.</p>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      
-      <h3>{userId == currentUserId ? 'Your Posts' : `${profile.username}'s Posts`}</h3>
+      <h3>{!userId || parseInt(userId) === currentUserId ? 'Your Posts' : `${profile.username}'s Posts`}</h3>
       {posts.length === 0 ? (
-        <p>No posts available.</p>
+        <p>No posts found.</p>
       ) : (
         posts.map((post) => (
-          <Tweet key={post.id}>
-            <TweetHeader>
+          <TweetStyled key={post.id}>
+            <PostHeader>
               <ProfileImage
-                src={post.profile_image ? `${API_URL}${post.profile_image}` : 'https://via.placeholder.com/40'}
+                src={post.profile_image ? `${API_URL}${post.profile_image}` : '/assets/fallback-profile.jpeg'}
                 alt="Profile"
+                onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
                 style={{ width: '40px', height: '40px' }}
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/40';
-                }}
               />
               <Nickname>{post.nickname || post.username || 'Unknown'}</Nickname>
-            </TweetHeader>
-            <TweetContent>{post.content || 'No content'}</TweetContent>
+            </PostHeader>
+            <PostContent>{post.content || 'No content'}</PostContent>
             {post.image_url && (
-              <TweetImage
+              <PostImage
                 src={`${API_URL}${post.image_url}`}
-                alt="Post"
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/600x400';
-                }}
+                alt="Post Image"
+                onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
               />
             )}
-          </Tweet>
+          </TweetStyled>
         ))
       )}
     </ProfileContainer>
@@ -322,3 +366,9 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+
+
+
+

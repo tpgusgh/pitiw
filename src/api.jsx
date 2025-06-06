@@ -65,6 +65,8 @@ export const getProfile = async (token, userId = null) => {
     throw error;
   }
 };
+
+
 export const updateProfile = async (token, nickname, bio, profileImage = null) => {
   try {
     const formData = new FormData();
@@ -72,12 +74,13 @@ export const updateProfile = async (token, nickname, bio, profileImage = null) =
     formData.append('bio', bio || '');
     if (profileImage) {
       formData.append('profile_image', profileImage);
-      console.log('FormData profile image:', profileImage.name);
+      console.log('Uploading profile image:', profileImage.name);
     }
-    console.log('Sending update profile request:', { nickname, bio, image: profileImage?.name });
+    console.log('Update profile request:', [...formData.entries()]);
     const response = await axios.post(`${API_URL}/profile`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
       },
     });
     console.log('Update profile response:', response.data);
@@ -91,6 +94,7 @@ export const updateProfile = async (token, nickname, bio, profileImage = null) =
     throw error;
   }
 };
+
 
 export const getPosts = async (token, userId = null) => {
   try {
