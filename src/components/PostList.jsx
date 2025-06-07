@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getPosts, deletePost, likePost, createComment, getComments } from '../api';
 import styled from 'styled-components';
+import backJpeg from '../assets/back.jpeg';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Timeline = styled.div`
@@ -88,6 +89,7 @@ const Button = styled.button`
   border-radius: 20px;
   cursor: pointer;
   margin-right: 10px;
+  margin-bottom: 10px;
   &:hover {
     background-color: ${(props) => (props.danger ? '#cc0000' : '#1991db')};
   }
@@ -131,7 +133,7 @@ const CommentSection = styled.div`
 const Comment = styled.div`
   display: flex;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 `;
 
 const CommentContent = styled.p`
@@ -302,7 +304,7 @@ const PostList = () => {
                   src={
                     post.profile_image
                       ? `${API_URL}${post.profile_image}`
-                      : 'https://via.placeholder.com/40'
+                      : backJpeg
                   }
                   alt="Profile"
                   onError={() => console.log('Profile image failed:', post.profile_image)}
@@ -346,6 +348,7 @@ const PostList = () => {
                 }
               />
               <Button onClick={() => handleCommentSubmit(post.id)}>Comment</Button>
+              <br />
               {comments[post.id]?.length > 0 && (
                 <div>
                   {comments[post.id].map((comment) => (
@@ -355,7 +358,7 @@ const PostList = () => {
                           src={
                             comment.profile_image
                               ? `${API_URL}${comment.profile_image}`
-                              : 'https://via.placeholder.com/40'
+                              : backJpeg
                           }
                           alt="Profile"
                           onError={() => console.log('Comment profile image failed:', comment.profile_image)}
