@@ -291,9 +291,6 @@ const PostList = () => {
       
         Write a post
       </CreatePostButton>
-      <CreatePostButton as={Link} to="/admin">
-        admin login
-      </CreatePostButton>
       <RefreshButton onClick={handleRefresh} disabled={isLoading}>
         {isLoading ? 'Refreshing...' : 'Refresh Posts'}
       </RefreshButton>
