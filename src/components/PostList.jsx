@@ -4,7 +4,7 @@ import { getPosts, deletePost, likePost, createComment, getComments } from '../a
 import styled from 'styled-components';
 import backJpeg from '../assets/back.jpeg';
 const API_URL = import.meta.env.VITE_API_URL;
-
+const is_admin = localStorage.getItem('is_admin');
 const Timeline = styled.div`
   max-width: 600px;
   margin: 20px auto;
@@ -281,13 +281,18 @@ const PostList = () => {
       setError(error.response?.data?.error || 'Failed to create comment.');
     }
   };
-
+  const isAdminValue = localStorage.getItem('is_admin');
+  console.log(isAdminValue);
   return (
+    
     <Timeline>
       <h2>Home</h2>
       <CreatePostButton as={Link} to="/create-post">
       
         Write a post
+      </CreatePostButton>
+      <CreatePostButton as={Link} to="/admin">
+        admin login
       </CreatePostButton>
       <RefreshButton onClick={handleRefresh} disabled={isLoading}>
         {isLoading ? 'Refreshing...' : 'Refresh Posts'}
@@ -332,11 +337,11 @@ const PostList = () => {
                 <HeartIcon>{post.isLiked ? '❤️' : '🤍'}</HeartIcon>
                 {post.likes} {post.isLiked ? 'Unlike' : 'Like'}
               </LikeButton>
-              {post.user_id === currentUserId && (
+              {post.user_id === currentUserId || is_admin ? (
                 <Button danger onClick={() => handleDelete(post.id)}>
                   Delete
                 </Button>
-              )}
+              ): ""}
             </div>
             <CommentSection>
               <CommentInput

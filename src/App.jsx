@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import CreatePost from './components/CreatePost';
 import PostList from './components/PostList';
@@ -7,6 +7,8 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Profile from './components/Profile';
 import Likes from './components/Likes';
+import AdminPanel from './components/AdminPanel'; 
+import FollowList from './components/FollowList.jsx';
 
 const AppContainer = styled.div`
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -41,25 +43,40 @@ const NavButton = styled.button`
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    setAuthenticated(!!token);
+    setAuthenticated(!!token)
+    if (token) {
+      const isAdminValue = localStorage.getItem('is_admin');
+      setAuthenticated(true);
+      setIsAdmin(isAdminValue === 'true');
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_id');
+    localStorage.removeItem('is_admin');
+    localStorage.removeItem('username');
     setAuthenticated(false);
+    setIsAdmin(false);
   };
 
   return (
     <AppContainer>
       <Router>
         <Navbar>
-          <Brand>H</Brand>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <Brand>H</Brand>
+          </Link>
+
           {authenticated ? (
-            <NavButton onClick={handleLogout}>Logout</NavButton>
+            <>
+              <NavButton onClick={handleLogout}>Logout</NavButton>
+              {isAdmin && <NavButton as={Link} to="/admin">Admin</NavButton>}
+            </>
           ) : (
             <NavButton as="a" href="/login">Login</NavButton>
           )}
@@ -90,6 +107,12 @@ function App() {
             element={<Login setAuthenticated={setAuthenticated} />}
           />
           <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/admin"
+            element={authenticated && isAdmin ? <AdminPanel /> : <Navigate to="/login" replace />}
+          />
+          <Route path="/profile/:userId/:type" element={<FollowList />} />
+          <Route path="/profile/:userId/:type" element={<FollowList />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

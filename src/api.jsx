@@ -294,3 +294,37 @@ export const unfollowUser = async (token, userId) => {
     throw error;
   }
 };
+
+export const getAdminUsers = async (token) => {
+  try {
+    console.log('Fetching admin users with token:', token.slice(0, 10) + '...');
+    const response = await axios.get(`${API_URL}/admin/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Get admin users response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get admin users error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+
+export const getFollowList = async (token, userId, type) => {
+  try {
+    const response = await axios.get(`${API_URL}/profile/${userId}/${type}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching ${type}:`, error.response?.data || error.message);
+    throw error.response?.data?.error || `Failed to fetch ${type}.`;
+  }
+};
