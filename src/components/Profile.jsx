@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getProfile, updateProfile, getPosts, followUser, unfollowUser } from '../api';
 import styled from 'styled-components';
 const API_URL = import.meta.env.VITE_API_URL;
+import backJpeg from '../assets/back.jpeg';
 
 const ProfileContainer = styled.div`
   max-width: 600px;
@@ -282,7 +283,7 @@ const Profile = () => {
       <h2>Profile</h2>
       <ProfileHeader>
         <ProfileImage
-          src={profile.profile_image ? `${API_URL}${profile.profile_image}` : '/assets/fallback-profile.jpeg'}
+          src={profile.profile_image ? `${API_URL}${profile.profile_image}` : backJpeg}
           alt="Profile"
           onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
         />
@@ -343,9 +344,9 @@ const Profile = () => {
           <TweetStyled key={post.id}>
             <PostHeader>
               <ProfileImage
-                src={post.profile_image ? `${API_URL}${post.profile_image}` : '/assets/fallback-profile.jpeg'}
+                src={post.profile_image ? `${API_URL}${post.profile_image}` : backJpeg}
                 alt="Profile"
-                onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
+                onError={(e) => (e.target.src = backJpeg)}
                 style={{ width: '40px', height: '40px' }}
               />
               <Nickname>{post.nickname || post.username || 'Unknown'}</Nickname>
@@ -355,7 +356,7 @@ const Profile = () => {
               <PostImage
                 src={`${API_URL}${post.image_url}`}
                 alt="Post Image"
-                onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
+                onError={(e) => (e.target.src = backJpeg)}
               />
             )}
           </TweetStyled>

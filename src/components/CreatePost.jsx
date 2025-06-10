@@ -20,6 +20,7 @@ const TextArea = styled.textarea`
   border-radius: 8px;
   border: 1px solid #e6ecf0;
   resize: none;
+  box-sizing: border-box;
 `;
 
 const Input = styled.input`
@@ -29,6 +30,7 @@ const Input = styled.input`
   border: 1px solid #e6ecf0;
   background-color: #f5f8fa;
   width: 100%;
+  box-sizing: border-box;
 `;
 
 const Button = styled.button`

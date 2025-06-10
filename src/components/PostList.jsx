@@ -118,6 +118,7 @@ const CreatePostButton = styled(Button)`
 const CommentInput = styled.input`
   width: 100%;
   padding: 10px;
+  box-sizing: border-box;
   margin: 10px 0;
   border-radius: 20px;
   border: 1px solid #e6ecf0;
