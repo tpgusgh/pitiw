@@ -87,6 +87,10 @@ const Login = ({ setAuthenticated }) => {
       const { token, user } = response.data;
       console.log('Login response:', response.data); // 디버깅
       if (response.data && response.data.token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('is_admin');
+        localStorage.removeItem('username');
         localStorage.setItem('token', token);
         localStorage.setItem('user_id', user.id); 
         localStorage.setItem('is_admin', user.is_admin.toString()); 
