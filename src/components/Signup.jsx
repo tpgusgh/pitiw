@@ -75,20 +75,7 @@ const ErrorMessage = styled.p`
   font-size: 14px;
 `;
 
-const SignupLink = styled.p`
-  text-align: center;
-  margin-top: 15px;
-  font-size: 14px;
-  color: #14171a;
-  a {
-    color: #1da1f2;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  a:hover {
-    text-decoration: underline;
-  }
-`;
+
 
 const Signup = () => {
   const [username, setUsername] = useState("");

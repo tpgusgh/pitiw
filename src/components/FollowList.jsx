@@ -1,8 +1,8 @@
-// FollowList.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getFollowList, followUser, unfollowUser } from '../api';
 import styled from 'styled-components';
+import backJpeg from '../assets/back.jpeg';
 
 const FollowListContainer = styled.div`
   max-width: 600px;
@@ -113,9 +113,9 @@ const FollowList = () => {
         users.map(user => (
           <UserItem key={user.id}>
             <UserImage
-              src={user.profile_image ? `${import.meta.env.VITE_API_URL}${user.profile_image}` : '/assets/fallback-profile.jpeg'}
+              src={user.profile_image ? `${import.meta.env.VITE_API_URL}${user.profile_image}` :  backJpeg }
               alt={`${user.username}'s profile`}
-              onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
+              onError={(e) => (e.target.src =  backJpeg )}
             />
             <UserInfo>
               <UserName>@{user.username}</UserName>
