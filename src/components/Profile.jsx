@@ -213,7 +213,7 @@ const Profile = () => {
         is_following: updatedProfile.is_following || profile.is_following,
       });
       setError('');
-      alert('Profile updated successfully!');
+      alert('변경완료');
     } catch (error) {
       console.error('Update profile error:', error.response?.data || error.message);
       const errorMsg = error.response?.data?.error || error.message || 'Failed to update profile.';
@@ -285,7 +285,7 @@ const Profile = () => {
         <ProfileImage
           src={profile.profile_image ? `${API_URL}${profile.profile_image}` : backJpeg}
           alt="Profile"
-          onError={(e) => (e.target.src = '/assets/fallback-profile.jpeg')}
+          onError={(e) => (e.target.src = backJpeg)}
         />
         <ProfileInfo>
           <Username>@{profile.username || 'Unknown'}</Username>
