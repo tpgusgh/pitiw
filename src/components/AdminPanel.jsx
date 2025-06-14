@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAdminUsers } from '../api';  // api.js에서 추가된 함수 사용
+import { getAdminUsers } from '../api';  
 import styled from 'styled-components';
 
 const AdminContainer = styled.div`
@@ -23,7 +23,7 @@ const AdminPanel = () => {
 
     const fetchUsers = async () => {
       try {
-        const data = await getAdminUsers(token);  // api.js 함수 사용
+        const data = await getAdminUsers(token);  
         setUsers(Array.isArray(data) ? data : []);
         setError('');
       } catch (err) {
